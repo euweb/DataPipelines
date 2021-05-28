@@ -6,21 +6,28 @@ class LoadDimensionOperator(BaseOperator):
 
     ui_color = '#80BD9E'
 
-    sql_template = "INSERT INTO {} {}"
+    sql_insert_template = "INSERT INTO {} {}"
+    sql_truncate_template = "TRUNCATE TABLE {}"
 
     @apply_defaults
     def __init__(self,
                  postgres_conn_id="redshift",
                  table="",
                  sql="",
+                 append=True,
                  *args, **kwargs):
 
         super(LoadDimensionOperator, self).__init__(*args, **kwargs)
         self.postgres_conn_id=postgres_conn_id
         self.table=table
         self.sql=sql
+        self.append=append
 
     def execute(self, context):
         redshift = PostgresHook(postgres_conn_id=self.postgres_conn_id)
-        # TODO: clear table before running sql? Load partitioned?
-        redshift.run(LoadDimensionOperator.sql_template.format(self.table, self.sql))
+        if(self.append):
+            self.log.info("Truncating table {}".format(self.table))
+            redshift.run(LoadDimensionOperator.sql_truncate_template.format(self.table))
+      
+        self.log.info("Inserting data into table {}".format(self.table))
+        redshift.run(LoadDimensionOperator.sql_insert_template.format(self.table, self.sql))
