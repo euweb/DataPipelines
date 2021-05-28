@@ -11,20 +11,27 @@ from helpers import SqlQueries
 # AWS_KEY = os.environ.get('AWS_KEY')
 # AWS_SECRET = os.environ.get('AWS_SECRET')
 
+'''
+    TODO
+    - Simple and dynamic operators, as little hard coding as possible
+    - Effective use of parameters in tasks
+    - Clean formatting of values in SQL strings
+    - Load dimensions with a subdag
+'''
+
 default_args = {
     'owner': 'udacity',
-    'start_date': datetime(2020, 1, 12),
     'depends_on_past': False,
+    'start_date': datetime(2020, 1, 12),
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
-    'email_on_retry': False,
     'catchup': False
 }
 
 dag = DAG('udac_example_dag4',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='@once'
+          schedule_interval='@once' # TODO run once an hour
         )
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
@@ -67,6 +74,8 @@ load_songplays_table = LoadFactOperator(
     table="songplays",
     sql=SqlQueries.songplay_table_insert
 )
+
+# TODO - Subdag for loading dimensions
 
 load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',

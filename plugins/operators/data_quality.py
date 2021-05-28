@@ -19,4 +19,12 @@ class DataQualityOperator(BaseOperator):
         # self.conn_id = conn_id
 
     def execute(self, context):
+        ''' TODO 
+            A task using the data quality operator is in the DAG and at least one data quality check is done
+                Data quality check is done with correct operator
+            The operator raises an error if the check fails pass
+                The DAG either fails or retries n times
+            The operator is parametrized
+                Operator uses params to get the tests and the results, tests are not hard coded to the operator
+	    '''
         self.log.info('DataQualityOperator not implemented yet')
