@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
-import os
+
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.subdag_operator import SubDagOperator
-
-from operators import (StageToRedshiftOperator, LoadFactOperator,
-                       DataQualityOperator)
 from helpers import SqlQueries
+from operators import (DataQualityOperator, LoadFactOperator,
+                       StageToRedshiftOperator)
 
 from subdag import load_dimensions_subdag
 
@@ -15,7 +15,7 @@ from subdag import load_dimensions_subdag
 # AWS_SECRET = os.environ.get('AWS_SECRET')
 DAG_ID = 'udac_example_dag5'
 START_DATE = datetime(2020, 1, 12)
-APPEND = False
+APPEND = Variable.get("udac_example_dag.append", False)
 
 '''
     TODO
