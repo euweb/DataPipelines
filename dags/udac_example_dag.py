@@ -105,40 +105,6 @@ load_songplays_table = LoadFactOperator(
     sql=SqlQueries.songplay_table_insert
 )
 
-# TODO - Subdag for loading dimensions
-
-# load_user_dimension_table = LoadDimensionOperator(
-#     task_id='Load_user_dim_table',
-#     dag=dag,
-#     postgres_conn_id="redshift",
-#     table="users",
-#     sql=SqlQueries.user_table_insert
-# )
-
-# load_song_dimension_table = LoadDimensionOperator(
-#     task_id='Load_song_dim_table',
-#     dag=dag,
-#     postgres_conn_id="redshift",
-#     table="songs",
-#     sql=SqlQueries.song_table_insert
-# )
-
-# load_artist_dimension_table = LoadDimensionOperator(
-#     task_id='Load_artist_dim_table',
-#     dag=dag,
-#     postgres_conn_id="redshift",
-#     table="artists",
-#     sql=SqlQueries.artist_table_insert
-# )
-
-# load_time_dimension_table = LoadDimensionOperator(
-#     task_id='Load_time_dim_table',
-#     dag=dag,
-#     postgres_conn_id="redshift",
-#     table="time",
-#     sql=SqlQueries.time_table_insert
-# )
-
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag
@@ -151,9 +117,5 @@ start_operator >> create_tables_task
 create_tables_task >> stage_events_to_redshift >> load_songplays_table
 create_tables_task >> stage_songs_to_redshift >> load_songplays_table
 
-# load_songplays_table >> load_song_dimension_table >> run_quality_checks
-# load_songplays_table >> load_user_dimension_table >> run_quality_checks
-# load_songplays_table >> load_artist_dimension_table >> run_quality_checks
-# load_songplays_table >> load_time_dimension_table >> run_quality_checks
 load_songplays_table >> load_dimension_tables >> run_quality_checks
 run_quality_checks >> end_operator
