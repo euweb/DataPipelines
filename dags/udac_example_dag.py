@@ -11,7 +11,7 @@ from operators import (DataQualityOperator, LoadFactOperator,
 
 from subdag import load_dimensions_subdag
 
-DAG_ID = 'udac_example_dag5'
+DAG_ID = 'udac_example_dag'
 START_DATE = datetime(2020, 1, 12)
 APPEND = Variable.get("udac_example_dag.append", False)
 
@@ -98,6 +98,10 @@ load_dimension_tables = SubDagOperator(
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
+    redshift_conn_id="redshift",
+    tables=dimension_tables_config.keys(),
+    checks=[DataQualityOperator.CHECK_COUNT,
+            DataQualityOperator.CHECK_DBL_VALUES],
     dag=dag
 )
 
