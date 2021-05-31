@@ -79,5 +79,5 @@ CREATE TABLE IF NOT EXISTS public.users (
 	last_name varchar(256),
 	gender varchar(256),
 	"level" varchar(256),
-	CONSTRAINT users_pkey PRIMARY KEY (userid)
+	CONSTRAINT users_pkey PRIMARY KEY (userid,"level")
 );
