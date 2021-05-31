@@ -12,8 +12,7 @@ class DataQualityOperator(BaseOperator):
     ui_color = '#89DA59'
 
     PK_TEMPLATE = '''
-    select tco.constraint_schema,
-       kcu.column_name as key_column
+    select tco.constraint_schema, kcu.column_name as key_column
     from information_schema.table_constraints tco
     join information_schema.key_column_usage kcu 
         on kcu.constraint_name = tco.constraint_name
@@ -89,7 +88,7 @@ class DataQualityOperator(BaseOperator):
                 redshift_hook = PostgresHook(self.redshift_conn_id)
                 for table in self.tables:
                     pks = self.get_pks(table)
-                    print(pks)
+                    logging.debug("primary keys {pks} in table {table}")
                     if pks:
                         pk_cols = ','.join(pks)
                         records = redshift_hook.get_records(DataQualityOperator.DBL_VALUES_TEMPLATE.format(
