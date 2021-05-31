@@ -2,7 +2,6 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.hooks.S3_hook import S3Hook
 from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
@@ -18,7 +17,6 @@ class StageToRedshiftOperator(BaseOperator):
     """
 
 
-    @apply_defaults
     def __init__(self,
                  redshift_conn_id="redshift",
                  aws_credentials_id="aws_credentials",

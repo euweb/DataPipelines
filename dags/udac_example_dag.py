@@ -11,19 +11,9 @@ from operators import (DataQualityOperator, LoadFactOperator,
 
 from subdag import load_dimensions_subdag
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
 DAG_ID = 'udac_example_dag5'
 START_DATE = datetime(2020, 1, 12)
 APPEND = Variable.get("udac_example_dag.append", False)
-
-'''
-    TODO
-    - Simple and dynamic operators, as little hard coding as possible
-    - Effective use of parameters in tasks
-    - Clean formatting of values in SQL strings
-    + Load dimensions with a subdag
-'''
 
 default_args = {
     'owner': 'udacity',
@@ -40,29 +30,6 @@ dag = DAG(DAG_ID,
           schedule_interval='@once'  # TODO run once an hour
           )
 
-
-dimension_tables_config = {
-    "users": SqlQueries.user_table_insert,
-    "songs": SqlQueries.song_table_insert,
-    "artists": SqlQueries.artist_table_insert,
-    "time": SqlQueries.time_table_insert
-}
-
-load_dimension_tables = SubDagOperator(
-    subdag=load_dimensions_subdag(
-        f'{DAG_ID}',
-        'load_dimension_tables',
-        "redshift",
-        dimension_tables_config,
-        start_date=START_DATE,
-        schedule_interval="@daily",
-        append=APPEND,
-        args=default_args
-    ),
-    task_id='load_dimension_tables',
-    default_args=default_args,
-    dag=dag
-)
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 #create_tables_task = DummyOperator(task_id='create_tables',  dag=dag)
@@ -104,6 +71,30 @@ load_songplays_table = LoadFactOperator(
     table="songplays",
     sql=SqlQueries.songplay_table_insert
 )
+
+dimension_tables_config = {
+    "users": SqlQueries.user_table_insert,
+    "songs": SqlQueries.song_table_insert,
+    "artists": SqlQueries.artist_table_insert,
+    "time": SqlQueries.time_table_insert
+}
+
+load_dimension_tables = SubDagOperator(
+    subdag=load_dimensions_subdag(
+        f'{DAG_ID}',
+        'load_dimension_tables',
+        "redshift",
+        dimension_tables_config,
+        start_date=START_DATE,
+        schedule_interval="@daily",
+        append=APPEND,
+        args=default_args
+    ),
+    task_id='load_dimension_tables',
+    default_args=default_args,
+    dag=dag
+)
+
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',

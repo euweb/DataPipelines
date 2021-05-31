@@ -15,8 +15,8 @@ def load_dimensions_subdag(
         task_id,
         redshift_conn_id,
         dimension_tables_config,
-        args, 
-        append=True, 
+        args,
+        append=True,
         **kwargs):
 
     dag = DAG(
@@ -36,5 +36,5 @@ def load_dimensions_subdag(
             append=append,
             sql=sql
         )
-    
+
     return dag
