@@ -31,6 +31,7 @@ def load_dimensions_subdag(
         default_args=args,
         start_date=days_ago(2),
         schedule_interval="@daily",
+        max_active_runs=1
     )
 
     for table in dimension_tables_config:

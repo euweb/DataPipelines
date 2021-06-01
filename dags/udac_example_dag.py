@@ -27,7 +27,8 @@ default_args = {
 dag = DAG(DAG_ID,
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='@once'  # TODO run once an hour
+          schedule_interval='@hourly',
+          max_active_runs=1
           )
 
 
