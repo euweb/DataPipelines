@@ -4,26 +4,6 @@ import logging
 import operator
 
 
-def get_truth(a, op, b):
-    """compares tow values without using eval()
-
-    Args:
-        a (Any): first value to compare
-        op (str): compare operator
-        b (Any): second value to compare
-
-    Returns:
-        [type]: [description]
-    """
-    ops = {'>': operator.gt,
-           '<': operator.lt,
-           '>=': operator.ge,
-           '<=': operator.le,
-           '=': operator.eq,
-           '!=': operator.ne}
-    return ops[op](a, b)
-
-
 class GenericDataQualityOperator(BaseOperator):
     """Implements data quality checks for given tables
     Possible checks are:
@@ -64,6 +44,26 @@ class GenericDataQualityOperator(BaseOperator):
         self.redshift_conn_id = redshift_conn_id
         self.checks = checks
 
+    @staticmethod
+    def get_truth(a, op, b):
+        """compares tow values without using eval()
+
+        Args:
+            a (Any): first value to compare
+            op (str): compare operator
+            b (Any): second value to compare
+
+        Returns:
+            [type]: [description]
+        """
+        ops = {'>': operator.gt,
+            '<': operator.lt,
+            '>=': operator.ge,
+            '<=': operator.le,
+            '=': operator.eq,
+            '!=': operator.ne}
+        return ops[op](a, b)
+
     def execute(self, context):
         """executs checks for tables
 
@@ -92,7 +92,7 @@ class GenericDataQualityOperator(BaseOperator):
                 if len(records) < 1 or len(records[0]) < 1:
                     raise ValueError(
                         f"Data quality check failed. {test_sql} returned no results")
-                if get_truth(records[0][0], comparison, expected_result):
+                if GenericDataQualityOperator.get_truth(records[0][0], comparison, expected_result):
                     logging.info(
                         f"Data quality check {test_sql} passed")
                 else:
