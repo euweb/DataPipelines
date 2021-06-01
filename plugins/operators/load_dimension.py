@@ -2,6 +2,7 @@ from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
 
+
 class LoadDimensionOperator(BaseOperator):
     """
     Loads data into dimension tables
@@ -27,16 +28,18 @@ class LoadDimensionOperator(BaseOperator):
             append (bool, optional): if false the table will be truncated before insert new rows. Defaults to True.
         """
         super(LoadDimensionOperator, self).__init__(*args, **kwargs)
-        self.postgres_conn_id=postgres_conn_id
-        self.table=table
-        self.sql=sql
-        self.append=append
+        self.postgres_conn_id = postgres_conn_id
+        self.table = table
+        self.sql = sql
+        self.append = append
 
     def execute(self, context):
         redshift = PostgresHook(postgres_conn_id=self.postgres_conn_id)
-        if(self.append):
+        if(not self.append):
             self.log.info("Truncating table {}".format(self.table))
-            redshift.run(LoadDimensionOperator.sql_truncate_template.format(self.table))
-      
+            redshift.run(
+                LoadDimensionOperator.sql_truncate_template.format(self.table))
+
         self.log.info("Inserting data into table {}".format(self.table))
-        redshift.run(LoadDimensionOperator.sql_insert_template.format(self.table, self.sql))
+        redshift.run(LoadDimensionOperator.sql_insert_template.format(
+            self.table, self.sql))
