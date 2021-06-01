@@ -32,7 +32,6 @@ dag = DAG(DAG_ID,
 
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
-#create_tables_task = DummyOperator(task_id='create_tables',  dag=dag)
 # added as described here: https://knowledge.udacity.com/questions/163614
 create_tables_task = PostgresOperator(
     task_id="create_tables",
@@ -48,9 +47,9 @@ stage_events_to_redshift = StageToRedshiftOperator(
     table="staging_events",
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    s3_bucket="mm-udacity-dend",
+    s3_bucket="udacity-dend",
     s3_key="log_data",
-    json_path="s3://mm-udacity-dend/log_json_path.json"
+    json_path="s3://udacity-dend/log_json_path.json"
 )
 
 #stage_songs_to_redshift = DummyOperator(task_id='stage_songs_to_redshift',  dag=dag)
@@ -94,7 +93,6 @@ load_dimension_tables = SubDagOperator(
     default_args=default_args,
     dag=dag
 )
-
 
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
