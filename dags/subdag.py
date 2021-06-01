@@ -5,11 +5,6 @@ from airflow.operators.postgres_operator import PostgresOperator
 from operators import LoadDimensionOperator
 from airflow.utils.dates import days_ago
 
-
-# Returns a DAG which creates a table if it does not exist, and then proceeds
-# to load data into that table from S3. When the load is complete, a data
-# quality  check is performed to assert that at least one row of data is
-# present.
 def load_dimensions_subdag(
         parent_dag_name,
         task_id,
@@ -18,7 +13,19 @@ def load_dimensions_subdag(
         args,
         append=True,
         **kwargs):
+    """executes LoadDimensionOperator for every table defined in dimension_tables_config
 
+    Args:
+        parent_dag_name (str): name of the parent DAG
+        task_id (str): task id of the parent DAG
+        redshift_conn_id (str): name of the connection created in Airflow
+        dimension_tables_config (dict): structure containing tables and their insert sql statements
+        args: default_args
+        append (bool, optional): if false the tables will be truncated before insert new rows. Defaults to True.
+
+    Returns:
+        DAG: DAG with LoadDimensionOperator for each table
+    """
     dag = DAG(
         dag_id=f"{parent_dag_name}.{task_id}",
         default_args=args,

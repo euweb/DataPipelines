@@ -4,9 +4,11 @@ from airflow.hooks.S3_hook import S3Hook
 from airflow.models import BaseOperator
 
 class StageToRedshiftOperator(BaseOperator):
+    """
+    Copies JSON data from S3 to a Redshift Cluster
+    """
     ui_color = '#358140'
 
-    template_fields = ("s3_key",)
     copy_sql = """
         COPY {}
         FROM '{}'
@@ -26,7 +28,17 @@ class StageToRedshiftOperator(BaseOperator):
                  json_path="auto",
                  region="eu-west-1",
                  *args, **kwargs):
+        """Initializes the operator
 
+        Args:
+            redshift_conn_id (str, optional): name of the connection created in Airflow. Defaults to "redshift".
+            aws_credentials_id (str, optional): name of the connection created in Airflow. Defaults to "aws_credentials".
+            table (str, optional): destination table. Defaults to "".
+            s3_bucket (str, optional): source s3 bucket. Defaults to "".
+            s3_key (str, optional): Folder inside the s3 bucket containing the data. Defaults to "".
+            json_path (str, optional): Path tho the format description of the data. Defaults to "auto".
+            region (str, optional): AWS region of s3 bucket and the Redshift Cluster. Defaults to "eu-west-1".
+        """
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
         self.table = table
         self.redshift_conn_id = redshift_conn_id
@@ -37,12 +49,11 @@ class StageToRedshiftOperator(BaseOperator):
         self.region = region
   
     def execute(self, context):
-        # TODO better logging
         aws_hook = S3Hook(aws_conn_id=self.aws_credentials_id)
         credentials = aws_hook.get_credentials()
         redshift = PostgresHook(postgres_conn_id=self.redshift_conn_id)
 
-        self.log.info("Clearing data from destination Redshift table")
+        self.log.info("Clearing data from destination Redshift table {self.table}")
         redshift.run("DELETE FROM {}".format(self.table))
 
         self.log.info("Copying data from S3 to Redshift")
@@ -57,8 +68,3 @@ class StageToRedshiftOperator(BaseOperator):
             self.json_path
         )
         redshift.run(formatted_sql)
-
-
-
-
-

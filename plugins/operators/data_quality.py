@@ -1,10 +1,19 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
-from airflow.utils.decorators import apply_defaults
 import logging
 
 
 class DataQualityOperator(BaseOperator):
+    """Implements data quality checks for given tables
+    Possible checks are:
+        - check for not empty tables
+        - check duplicate values for primary keys
+
+    Raises:
+        ValueError: if quality check fails
+
+    Returns: none
+    """
 
     CHECK_DBL_VALUES = 'check_double_values'
     CHECK_COUNT = 'check_count'
@@ -12,20 +21,20 @@ class DataQualityOperator(BaseOperator):
     ui_color = '#89DA59'
 
     PK_TEMPLATE = '''
-    select tco.constraint_schema, kcu.column_name as key_column
-    from information_schema.table_constraints tco
-    join information_schema.key_column_usage kcu 
-        on kcu.constraint_name = tco.constraint_name
-        and kcu.constraint_schema = tco.constraint_schema
-        and kcu.constraint_name = tco.constraint_name
-    where tco.constraint_type = 'PRIMARY KEY' AND kcu.table_name='{}'
-    order by tco.constraint_schema,
-        tco.constraint_name,
-        kcu.ordinal_position;
+        select tco.constraint_schema, kcu.column_name as key_column
+        from information_schema.table_constraints tco
+        join information_schema.key_column_usage kcu 
+            on kcu.constraint_name = tco.constraint_name
+            and kcu.constraint_schema = tco.constraint_schema
+            and kcu.constraint_name = tco.constraint_name
+        where tco.constraint_type = 'PRIMARY KEY' AND kcu.table_name='{}'
+        order by tco.constraint_schema,
+            tco.constraint_name,
+            kcu.ordinal_position;
     '''
 
     DBL_VALUES_TEMPLATE = '''
-    SELECT {pk_cols}, count_total
+        SELECT {pk_cols}, count_total
         FROM (
             SELECT {pk_cols}, SUM(1) AS count_total
             FROM {table}
@@ -35,19 +44,32 @@ class DataQualityOperator(BaseOperator):
         LIMIT 1
     '''
 
-    @apply_defaults
     def __init__(self,
                  redshift_conn_id,
                  tables,
                  checks,
                  *args, **kwargs):
+        """Initializes the operator
 
+        Args:
+            redshift_conn_id (str): name of the connection created in Airflow->Admin->Connections
+            tables (list(str)): list of tables to check
+            checks (list(str)): list of checks
+        """
         super(DataQualityOperator, self).__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.tables = tables
         self.checks = checks
 
     def get_pks(self, table):
+        """gets the list of column names building the primary key
+
+        Args:
+            table (str): table name
+
+        Returns:
+            list(str): list of column names
+        """
         redshift_hook = PostgresHook(self.redshift_conn_id)
         records = redshift_hook.get_records(
             DataQualityOperator.PK_TEMPLATE.format(table))
@@ -61,14 +83,14 @@ class DataQualityOperator(BaseOperator):
             return columns
 
     def execute(self, context):
-        ''' TODO 
-            A task using the data quality operator is in the DAG and at least one data quality check is done
-                Data quality check is done with correct operator
-            The operator raises an error if the check fails pass
-                The DAG either fails or retries n times
-            The operator is parametrized
-                Operator uses params to get the tests and the results, tests are not hard coded to the operator
-            '''
+        """executs checks for tables
+
+        Args:
+            context: airflow execution context
+
+        Raises:
+            ValueError: raised if any check fails
+        """
         for check in self.checks:
             if(check == DataQualityOperator.CHECK_COUNT):
                 redshift_hook = PostgresHook(self.redshift_conn_id)
