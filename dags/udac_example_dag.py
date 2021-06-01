@@ -6,7 +6,7 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.postgres_operator import PostgresOperator
 from airflow.operators.subdag_operator import SubDagOperator
 from helpers import SqlQueries
-from operators import (DataQualityOperator, LoadFactOperator,
+from operators import ( LoadFactOperator, GenericDataQualityOperator,
                        StageToRedshiftOperator)
 
 from subdag import load_dimensions_subdag
@@ -41,19 +41,20 @@ create_tables_task = PostgresOperator(
     postgres_conn_id="redshift"
 )
 
-#stage_events_to_redshift = DummyOperator(task_id='stage_events_to_redshift',  dag=dag)
+# stage_events_to_redshift = DummyOperator(task_id='stage_events_to_redshift',  dag=dag)
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
     dag=dag,
     table="staging_events",
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
-    s3_bucket="udacity-dend",
+    s3_bucket="mm-udacity-dend",
     s3_key="log_data",
-    json_path="s3://udacity-dend/log_json_path.json"
+    region="eu-west-1",
+    json_path="s3://mm-udacity-dend/log_json_path.json"
 )
 
-#stage_songs_to_redshift = DummyOperator(task_id='stage_songs_to_redshift',  dag=dag)
+# stage_songs_to_redshift = DummyOperator(task_id='stage_songs_to_redshift',  dag=dag)
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
     dag=dag,
@@ -61,7 +62,8 @@ stage_songs_to_redshift = StageToRedshiftOperator(
     redshift_conn_id="redshift",
     aws_credentials_id="aws_credentials",
     s3_bucket="mm-udacity-dend",
-    s3_key="song_data"
+    s3_key="song_data",
+    region="eu-west-1",
 )
 
 load_songplays_table = LoadFactOperator(
@@ -86,7 +88,7 @@ load_dimension_tables = SubDagOperator(
         "redshift",
         dimension_tables_config,
         start_date=START_DATE,
-        schedule_interval="@daily",
+        schedule_interval="@hourly",
         append=APPEND,
         args=default_args
     ),
@@ -95,12 +97,22 @@ load_dimension_tables = SubDagOperator(
     dag=dag
 )
 
-run_quality_checks = DataQualityOperator(
+data_quality_checks = [
+    # check table contents
+    {'test_sql': "SELECT COUNT(*) FROM users", 'expected_result': 0, "comparison": '>'},
+    {'test_sql': "SELECT COUNT(*) FROM songs", 'expected_result': 0, "comparison": '>'},
+    {'test_sql': "SELECT COUNT(*) FROM artists", 'expected_result': 0, "comparison": '>'},
+    {'test_sql': "SELECT COUNT(*) FROM time", 'expected_result': 0, "comparison": '>'},
+    # check doubles in primary keys
+    {'test_sql': GenericDataQualityOperator.DBL_VALUES_TEMPLATE.format(table='users',pk_cols='userid, "level"'), 'expected_result': 0, "comparison": 'none'},
+    # check nulls in primary keys
+    {'test_sql': "SELECT COUNT(*) FROM users WHERE userid is NULL or level is NULL", 'expected_result': 0, "comparison": '='},
+]
+
+run_quality_checks = GenericDataQualityOperator(
     task_id='Run_data_quality_checks',
     redshift_conn_id="redshift",
-    tables=dimension_tables_config.keys(),
-    checks=[DataQualityOperator.CHECK_COUNT,
-            DataQualityOperator.CHECK_DBL_VALUES],
+    checks=data_quality_checks,
     dag=dag
 )
 
