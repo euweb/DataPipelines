@@ -38,4 +38,4 @@ The tool Apache Airflow should be used to load and process data residing in S3 a
 2. run `docker-compose up`
 3. go to http://localhost:8080/home
 4. create _aws_credentials_ and _redshift_ connections (Admin->Connections)
-5. activate an run DAG `udac_example_dag`
+5. activate and run DAG `udac_example_dag`
